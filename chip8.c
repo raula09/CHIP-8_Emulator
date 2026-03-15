@@ -21,3 +21,24 @@ static const uint8_t font[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
+void init_chip8(Chip8 *chip8) {
+    memset(chip8, 0, sizeof(Chip8));
+    chip8->pc = START_ADDRESS;
+    memcpy(&chip8->memory[FONT_ADDR], font, FONTSET_SIZE);
+}
+
+void load_rom(Chip8 *chip8, const char *filename) {
+    FILE *fp = fopen(filename, "rb");
+    if (!fp) {
+        fprintf(stderr,"loading ROM failed %s\n", filename);
+       return;
+    }
+    size_t bytes_read = fread(&chip8->memory[START_ADDRESS], 1, MEMORY_SIZE - START_ADDRESS, fp);
+    if (bytes_read == 0) {
+        fprintf(stderr,"failed to read ROM %s\n", filename);
+
+    }else {
+        fprintf(stderr,"loaded ROM %s (%zu bytes)\n", filename, bytes_read);
+    }
+    fclose(fp);
+}
