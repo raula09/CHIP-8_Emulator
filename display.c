@@ -1,6 +1,6 @@
 #include "display.h"
 
-static SDL_Scancode keymap[16] = {
+static const SDL_Scancode keymap[NUM_KEYS] = {
     SDL_SCANCODE_X,    // 0x0
     SDL_SCANCODE_1,    // 0x1
     SDL_SCANCODE_2,    // 0x2
@@ -20,7 +20,11 @@ static SDL_Scancode keymap[16] = {
 };
 
 void display_init(Display *d, int scale) {
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
+        fprintf(stderr, "SDL init failed: %s\n", SDL_GetError());
+        return;
+    }
+
     d->window = SDL_CreateWindow(
         "CHIP-8",
         SDL_WINDOWPOS_CENTERED,
@@ -29,8 +33,19 @@ void display_init(Display *d, int scale) {
         SCREEN_HEIGHT * scale,
         SDL_WINDOW_SHOWN
     );
+    if (!d->window) {
+        fprintf(stderr, "window creation failed: %s\n", SDL_GetError());
+        return;
+    }
+
     d->renderer = SDL_CreateRenderer(d->window, -1, SDL_RENDERER_ACCELERATED);
+    if (!d->renderer) {
+        fprintf(stderr, "renderer creation failed: %s\n", SDL_GetError());
+        return;
+    }
+
     SDL_RenderSetLogicalSize(d->renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+
     d->texture = SDL_CreateTexture(
         d->renderer,
         SDL_PIXELFORMAT_RGBA8888,
@@ -38,12 +53,17 @@ void display_init(Display *d, int scale) {
         SCREEN_WIDTH,
         SCREEN_HEIGHT
     );
+    if (!d->texture) {
+        fprintf(stderr, "texture creation failed: %s\n", SDL_GetError());
+        return;
+    }
 }
 
 void display_draw(Display *d, Chip8 *chip8) {
     uint32_t pixels[SCREEN_WIDTH * SCREEN_HEIGHT];
+    int size = SCREEN_WIDTH * SCREEN_HEIGHT;
 
-    for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++) {
+    for (int i = 0; i < size; i++) {
         pixels[i] = chip8->gfx[i] ? 0xFFFFFFFF : 0x000000FF;
     }
 
@@ -54,19 +74,19 @@ void display_draw(Display *d, Chip8 *chip8) {
 }
 
 void display_handle_input(Chip8 *chip8, SDL_Event *event) {
-    if (event->type == SDL_KEYDOWN || event->type == SDL_KEYUP) {
-        for (int i = 0; i < 16; i++) {
-            if (event->key.keysym.scancode == keymap[i]) {
-                chip8->keypad[i] = (event->type == SDL_KEYDOWN) ? 1 : 0;
-                break;
-            }
+    if (event->type != SDL_KEYDOWN && event->type != SDL_KEYUP) return;
+
+    for (int i = 0; i < NUM_KEYS; i++) {
+        if (event->key.keysym.scancode == keymap[i]) {
+            chip8->keypad[i] = (event->type == SDL_KEYDOWN) ? 1 : 0;
+            break;
         }
     }
 }
 
 void display_destroy(Display *d) {
-    SDL_DestroyTexture(d->texture);
-    SDL_DestroyRenderer(d->renderer);
-    SDL_DestroyWindow(d->window);
+    if (d->texture)  SDL_DestroyTexture(d->texture);
+    if (d->renderer) SDL_DestroyRenderer(d->renderer);
+    if (d->window)   SDL_DestroyWindow(d->window);
     SDL_Quit();
 }
