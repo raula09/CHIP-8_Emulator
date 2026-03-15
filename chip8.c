@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static const uint8_t font[80] = {
+static const uint8_t font[FONTSET_SIZE] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
     0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -21,6 +21,7 @@ static const uint8_t font[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
+
 void init_chip8(Chip8 *chip8) {
     memset(chip8, 0, sizeof(Chip8));
     chip8->pc = START_ADDRESS;
@@ -30,18 +31,19 @@ void init_chip8(Chip8 *chip8) {
 void load_rom(Chip8 *chip8, const char *filename) {
     FILE *fp = fopen(filename, "rb");
     if (!fp) {
-        fprintf(stderr,"loading ROM failed %s\n", filename);
-       return;
+        fprintf(stderr, "error: could not open ROM '%s'\n", filename);
+        return;
     }
-    size_t bytes_read = fread(&chip8->memory[START_ADDRESS], 1, MEMORY_SIZE - START_ADDRESS, fp);
-    if (bytes_read == 0) {
-        fprintf(stderr,"failed to read ROM %s\n", filename);
 
-    }else {
-        fprintf(stderr,"loaded ROM %s (%zu bytes)\n", filename, bytes_read);
-    }
+    size_t bytes_read = fread(&chip8->memory[START_ADDRESS], 1, MEMORY_SIZE - START_ADDRESS, fp);
     fclose(fp);
+
+    if (bytes_read == 0)
+        fprintf(stderr, "error: ROM '%s' is empty or unreadable\n", filename);
+    else
+        fprintf(stderr, "loaded ROM '%s' (%zu bytes)\n", filename, bytes_read);
 }
+
 void emulate_cycle(Chip8 *chip8) {
     uint16_t opcode = (chip8->memory[chip8->pc] << 8) | chip8->memory[chip8->pc + 1];
     chip8->pc += 2;
@@ -60,8 +62,7 @@ void emulate_cycle(Chip8 *chip8) {
                     chip8->draw_flag = 1;
                     break;
                 case 0x00EE:
-                    chip8->sp--;
-                    chip8->pc = chip8->stack[chip8->sp];
+                    chip8->pc = chip8->stack[--chip8->sp];
                     break;
             }
             break;
@@ -71,8 +72,7 @@ void emulate_cycle(Chip8 *chip8) {
             break;
 
         case 0x2000:
-            chip8->stack[chip8->sp] = chip8->pc;
-            chip8->sp++;
+            chip8->stack[chip8->sp++] = chip8->pc;
             chip8->pc = nnn;
             break;
 
@@ -113,12 +113,12 @@ void emulate_cycle(Chip8 *chip8) {
                 case 0x4: {
                     uint16_t sum = chip8->V[X] + chip8->V[Y];
                     chip8->V[0xF] = (sum > 0xFF) ? 1 : 0;
-                    chip8->V[X] = (uint8_t)sum;
+                    chip8->V[X]   = (uint8_t)sum;
                     break;
                 }
                 case 0x5:
                     chip8->V[0xF] = (chip8->V[X] > chip8->V[Y]) ? 1 : 0;
-                    chip8->V[X] -= chip8->V[Y];
+                    chip8->V[X]  -= chip8->V[Y];
                     break;
                 case 0x6:
                     chip8->V[0xF] = chip8->V[X] & 0x1;
@@ -126,11 +126,14 @@ void emulate_cycle(Chip8 *chip8) {
                     break;
                 case 0x7:
                     chip8->V[0xF] = (chip8->V[Y] > chip8->V[X]) ? 1 : 0;
-                    chip8->V[X] = chip8->V[Y] - chip8->V[X];
+                    chip8->V[X]   = chip8->V[Y] - chip8->V[X];
                     break;
                 case 0xE:
                     chip8->V[0xF] = (chip8->V[X] >> 7) & 0x1;
                     chip8->V[X] <<= 1;
+                    break;
+                default:
+                    fprintf(stderr, "unknown 0x8000 opcode: 0x%04X\n", opcode);
                     break;
             }
             break;
@@ -144,7 +147,7 @@ void emulate_cycle(Chip8 *chip8) {
             break;
 
         case 0xB000:
-            chip8->pc = nnn + chip8->V[0x0];
+            chip8->pc = nnn + chip8->V[0];
             break;
 
         case 0xC000:
@@ -156,19 +159,17 @@ void emulate_cycle(Chip8 *chip8) {
             uint8_t y_loc = chip8->V[Y];
             chip8->V[0xF] = 0;
 
-            for (int yline = 0; yline < n; yline++) {
-                uint8_t pixel = chip8->memory[chip8->I + yline];
-                for (int xline = 0; xline < 8; xline++) {
-                    if ((pixel & (0x80 >> xline)) != 0) {
-                        int screen_x = (x_loc + xline) % SCREEN_WIDTH;
-                        int screen_y = (y_loc + yline) % SCREEN_HEIGHT;
-                        int index = screen_x + (screen_y * SCREEN_WIDTH);
+            for (int row = 0; row < n; row++) {
+                uint8_t sprite = chip8->memory[chip8->I + row];
+                for (int col = 0; col < 8; col++) {
+                    if ((sprite & (0x80 >> col)) == 0) continue;
 
-                        if (chip8->gfx[index] == 1)
-                            chip8->V[0xF] = 1;
+                    int sx    = (x_loc + col) % SCREEN_WIDTH;
+                    int sy    = (y_loc + row) % SCREEN_HEIGHT;
+                    int index = sx + (sy * SCREEN_WIDTH);
 
-                        chip8->gfx[index] ^= 1;
-                    }
+                    if (chip8->gfx[index]) chip8->V[0xF] = 1;
+                    chip8->gfx[index] ^= 1;
                 }
             }
             chip8->draw_flag = 1;
@@ -178,10 +179,13 @@ void emulate_cycle(Chip8 *chip8) {
         case 0xE000:
             switch (kk) {
                 case 0x9E:
-                    if (chip8->keypad[chip8->V[X]] == 1) chip8->pc += 2;
+                    if (chip8->keypad[chip8->V[X]]) chip8->pc += 2;
                     break;
                 case 0xA1:
-                    if (chip8->keypad[chip8->V[X]] != 1) chip8->pc += 2;
+                    if (!chip8->keypad[chip8->V[X]]) chip8->pc += 2;
+                    break;
+                default:
+                    fprintf(stderr, "unknown 0xE000 opcode: 0x%04X\n", opcode);
                     break;
             }
             break;
@@ -194,7 +198,7 @@ void emulate_cycle(Chip8 *chip8) {
                 case 0x0A: {
                     int key_pressed = 0;
                     for (int i = 0; i < NUM_KEYS; i++) {
-                        if (chip8->keypad[i] == 1) {
+                        if (chip8->keypad[i]) {
                             chip8->V[X] = i;
                             key_pressed = 1;
                             break;
@@ -216,10 +220,10 @@ void emulate_cycle(Chip8 *chip8) {
                     chip8->I = FONT_ADDR + (chip8->V[X] & 0x0F) * 5;
                     break;
                 case 0x33: {
-                    uint8_t vX = chip8->V[X];
-                    chip8->memory[chip8->I]     = vX / 100;
-                    chip8->memory[chip8->I + 1] = (vX / 10) % 10;
-                    chip8->memory[chip8->I + 2] = vX % 10;
+                    uint8_t val = chip8->V[X];
+                    chip8->memory[chip8->I]     = val / 100;
+                    chip8->memory[chip8->I + 1] = (val / 10) % 10;
+                    chip8->memory[chip8->I + 2] = val % 10;
                     break;
                 }
                 case 0x55:
@@ -230,13 +234,14 @@ void emulate_cycle(Chip8 *chip8) {
                     for (int i = 0; i <= X; i++)
                         chip8->V[i] = chip8->memory[chip8->I + i];
                     break;
+                default:
+                    fprintf(stderr, "unknown 0xF000 opcode: 0x%04X\n", opcode);
+                    break;
             }
             break;
 
         default:
+            fprintf(stderr, "unknown opcode: 0x%04X\n", opcode);
             break;
     }
-
-    if (chip8->delay_timer > 0) chip8->delay_timer--;
-    if (chip8->sound_timer > 0) chip8->sound_timer--;
 }
