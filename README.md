@@ -25,7 +25,7 @@ the mid-1970s, originally designed to make game development easier on early
 8-bit microcomputers. Simple by modern standards but a great target for a
 first emulator.
 
-I Would Recommend Cowgod's (Thomas P. Greene) CHIP-8 Technical Reference.
+I Would Recommend Cowgod's (Thomas P. Greene) CHIP-8 Technical Reference:http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
 
 What's implemented:
 
