@@ -28,6 +28,8 @@ typedef struct {
     uint16_t stack[STACK_SIZE];
     uint8_t sp;
 
+    uint8_t draw_flag;
+
     //timers
     uint8_t delay_timer;
     uint8_t sound_timer;
@@ -49,9 +51,9 @@ void init_chip8(Chip8 *c);
 void load_rom(Chip8 *c, const char *filename);
 
 //emulate one cpu cycle
-void emulate_cycle(Chip *c);
+void emulate_cycle(Chip8 *c);
 
 //execute a single opcode
-void execute_upcode(Chip8 *c);
+void execute_opcode(Chip8 *c);
 
 #endif
