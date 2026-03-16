@@ -98,5 +98,4 @@ NOTES
 For more details check ARCHITECTURE.md
 
 
-shoutout to Dachi Arevadze and his CHIP-8 emulator (https://github.com/Dachacho/chip8-emulator)
-for the recommendation to build this project.
+Shout-out to Dachi Arevadze and the CHIP-8 emulator at https://github.com/Dachacho/chip8-emulator for inspiring this project.

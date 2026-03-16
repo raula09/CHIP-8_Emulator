@@ -1,0 +1,11 @@
+# Build outputs
+build/
+cmake-build-*/
+
+# Local binaries
+chip8
+CHIP_8_Emulator
+
+# IDE
+.idea/
+
