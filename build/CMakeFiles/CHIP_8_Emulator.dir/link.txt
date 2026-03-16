@@ -1,0 +1,1 @@
+/usr/sbin/cc -Wl,--dependency-file=CMakeFiles/CHIP_8_Emulator.dir/link.d CMakeFiles/CHIP_8_Emulator.dir/main.c.o CMakeFiles/CHIP_8_Emulator.dir/chip8.c.o CMakeFiles/CHIP_8_Emulator.dir/display.c.o -o CHIP_8_Emulator  /usr/lib/libSDL2main.a /usr/lib/libSDL2-2.0.so.0.3200.64
