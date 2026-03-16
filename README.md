@@ -95,5 +95,8 @@ NOTES
     timers tick down at 60Hz
     display refreshes at 60Hz
     unknown opcodes get logged to stderr instead of silently crashing
+For more details check ARCHITECTURE.md
+
+
 shoutout to Dachi Arevadze and his CHIP-8 emulator (https://github.com/Dachacho/chip8-emulator)
 for the recommendation to build this project.
