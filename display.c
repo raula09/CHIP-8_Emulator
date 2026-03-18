@@ -61,7 +61,7 @@ void display_init(Display *d, int scale) {
 
 void display_draw(Display *d, Chip8 *chip8) {
     uint32_t pixels[SCREEN_WIDTH * SCREEN_HEIGHT];
-    int size = SCREEN_WIDTH * SCREEN_HEIGHT;
+    int const size = SCREEN_WIDTH * SCREEN_HEIGHT;
 
     for (int i = 0; i < size; i++) {
         pixels[i] = chip8->gfx[i] ? 0xFFFFFFFF : 0x000000FF;

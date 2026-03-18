@@ -1,7 +1,6 @@
 #ifndef CHIP8_H
 #define CHIP8_H
-#include <stdio.h>
-#include <stdlib.h>
+
 #include <stdint.h>
 #define MEMORY_SIZE 4096
 #define NUM_REGISTERS 16

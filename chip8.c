@@ -64,6 +64,9 @@ void emulate_cycle(Chip8 *chip8) {
                 case 0x00EE:
                     chip8->pc = chip8->stack[--chip8->sp];
                     break;
+            default:
+                    fprintf(stderr, "unknown opcode: 0x%04X\n", opcode);
+                    break;
             }
             break;
 

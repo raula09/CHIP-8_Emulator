@@ -9,3 +9,6 @@ CHIP_8_Emulator
 # IDE
 .idea/
 
+#roms
+.roms/
+
