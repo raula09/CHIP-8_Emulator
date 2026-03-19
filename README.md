@@ -14,7 +14,7 @@ Started this as a way to get better at C, ended up learning a ton about
 how CPUs actually work under the hood. Memory management, fetch-decode-execute
 cycles, opcode parsing. learned way faster through building this
 than reading about it. Honestly one of the better beginner projects out there
-if you want something thats actually useful.
+if you want something cool.
 
 ---
 
@@ -98,4 +98,3 @@ NOTES
 For more details check ARCHITECTURE.md
 
 
-Shout-out to Dachi Arevadze and the CHIP-8 emulator at https://github.com/Dachacho/chip8-emulator for inspiring this project.
